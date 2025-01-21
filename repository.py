@@ -1,6 +1,6 @@
 from database import new_session, TasksOrm
 from schemas import STaskAdd, STask
-from sqlalchemy import select
+from sqlalchemy import select, cast, Integer
 
 
 class TaskRepository:
@@ -23,3 +23,25 @@ class TaskRepository:
             task_models = result.scalars().all()
             task_schemas = [STask.model_validate(task_model) for task_model in task_models]
             return task_schemas
+    
+    @classmethod
+    async def get_one(cls, task_id: int) -> STask | None:
+        async with new_session() as session:
+            query = select(TasksOrm).where(TasksOrm.id == cast(task_id, Integer))
+            result = await session.execute(query)
+            task_model = result.scalars().first()
+            if task_model:
+                return STask.model_validate(task_model)
+            return None
+    
+    @classmethod
+    async def delete_one(cls, task_id: int) -> bool:
+        async with new_session() as session:
+            query = select(TasksOrm).where(TasksOrm.id == cast(task_id, Integer))
+            result = await session.execute(query)
+            task_model = result.scalars().first()
+            if task_model:
+                await session.delete(task_model)
+                await session.commit()
+                return True
+            return False
