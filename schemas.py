@@ -15,3 +15,12 @@ class STask(STaskAdd):
 class STaskId(BaseModel):
     ok: bool = True
     task_id: int
+
+
+class SUserAuth(BaseModel):
+    username: str
+    password: str
+
+
+class SUserRegister(SUserAuth):
+    password_confirm: str
