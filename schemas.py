@@ -1,5 +1,4 @@
 from pydantic import BaseModel, ConfigDict
-from enum import Enum
 
 
 class STaskAdd(BaseModel):
@@ -16,17 +15,3 @@ class STask(STaskAdd):
 class STaskId(BaseModel):
     ok: bool = True
     task_id: int
-
-
-class SUserAuth(BaseModel):
-    username: str
-    password: str
-
-
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    USER = "user"
-
-class SUserRegister(SUserAuth):
-    password_confirm: str
-    role: UserRole = UserRole.USER  # Добавляем поле role
