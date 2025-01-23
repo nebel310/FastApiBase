@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from enum import Enum
 
 
 engine = create_async_engine(
@@ -21,12 +22,17 @@ class TaskOrm(Model):
     description: Mapped[str | None]
 
 
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+
 class UserOrm(Model):
     __tablename__ = "users"
     
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(unique=True)
     hashed_password: Mapped[str]
+    role: Mapped[UserRole] = mapped_column(default=UserRole.USER)
 
 
 async def create_tables():

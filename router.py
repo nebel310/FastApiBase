@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from security import create_access_token, get_current_user
+from security import create_access_token, get_current_user, get_current_admin
 from schemas import STaskAdd, STask, STaskId, SUserRegister
 from typing import Annotated
 from repository import TaskRepository, UserRepository
@@ -18,10 +18,11 @@ router_user = APIRouter(
 )
 
 
-@router_task.post('')
+@router_task.post("", response_model=STaskId)
 async def add_task(
-    task: Annotated[STaskAdd, Depends()]
-) -> STaskId:
+    task: STaskAdd,
+    current_user: UserOrm = Depends(get_current_admin)  # Только администраторы могут добавлять задачи
+):
     task_id = await TaskRepository.add_one(task)
     return {'success': True, 'task_id': task_id}
 

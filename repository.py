@@ -62,7 +62,11 @@ class UserRepository:
             
             hashed_password = pwd_context.hash(user_data.password)
             
-            user = UserOrm(username=user_data.username, hashed_password=hashed_password)
+            user = UserOrm(
+                username=user_data.username,
+                hashed_password=hashed_password,
+                role=user_data.role
+            )
             session.add(user)
             await session.flush()
             await session.commit()
