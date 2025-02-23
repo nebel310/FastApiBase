@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,9 +35,18 @@ def custom_openapi():
             "bearerFormat": "JWT"
         }
     }
-    if "/auth/me" in openapi_schema["paths"]:
-        openapi_schema["paths"]["/auth/me"]["get"]["security"] = [{"Bearer": []}]
-        openapi_schema["paths"]["/auth/logout"]["post"]["security"] = [{"Bearer": []}]
+    
+    secured_paths = [
+        "/auth/me",
+        "/auth/logout"
+    ]
+
+    for path in secured_paths:
+        if path in openapi_schema["paths"]:
+            if path == "/auth/me":
+                openapi_schema["paths"][path]["get"]["security"] = [{"Bearer": []}]
+            elif path == "/auth/logout":
+                openapi_schema["paths"][path]["post"]["security"] = [{"Bearer": []}]
     
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -54,3 +64,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        reload=True
+    )
