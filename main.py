@@ -25,7 +25,7 @@ def custom_openapi():
     openapi_schema = get_openapi(
         title="Your App",
         version="1.0.0",
-        description="API for users",
+        description="Base nebel's FastApi template with JWT Auth",
         routes=app.routes,
     )
     openapi_schema["components"]["securitySchemes"] = {
@@ -36,17 +36,15 @@ def custom_openapi():
         }
     }
     
-    secured_paths = [
-        "/auth/me",
-        "/auth/logout"
-    ]
-
-    for path in secured_paths:
+    secured_paths = {
+        #Авторизация
+        "/auth/me": {"method": "get", "security": [{"Bearer": []}]},
+        "/auth/logout": {"method": "post", "security": [{"Bearer": []}]},
+    }
+    
+    for path, config in secured_paths.items():
         if path in openapi_schema["paths"]:
-            if path == "/auth/me":
-                openapi_schema["paths"][path]["get"]["security"] = [{"Bearer": []}]
-            elif path == "/auth/logout":
-                openapi_schema["paths"][path]["post"]["security"] = [{"Bearer": []}]
+            openapi_schema["paths"][path][config["method"]]["security"] = config["security"]
     
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -67,8 +65,9 @@ app.add_middleware(
 
 
 
+#Раскоментить, когда будешь писать докер.
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-        reload=True
+        reload=True,
     )

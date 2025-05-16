@@ -2,12 +2,12 @@ import os
 from dotenv import load_dotenv
 from database import new_session
 from models.auth import UserOrm, RefreshTokenOrm, BlacklistedTokenOrm
-from schemas import SUserRegister
+from schemas.auth import SUserRegister
 from sqlalchemy import select, delete
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timezone, timedelta
-from utils import generate_email_token, send_confirmation_email, confirm_email_token
+from utils.confirm_email import generate_email_token, send_confirmation_email, confirm_email_token
 
 
 
@@ -72,7 +72,7 @@ class UserRepository:
             result = await session.execute(query)
             user = result.scalars().first()
             
-            if not user or not pwd_context.verify(password, user.hashed_password) or not user.is_active or not user.is_confirmed:
+            if not user or not pwd_context.verify(password, user.hashed_password) or not user.is_confirmed:
                 return None
             
             return user
