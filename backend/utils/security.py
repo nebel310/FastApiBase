@@ -8,6 +8,7 @@ from database import new_session
 from models.auth import BlacklistedTokenOrm, UserOrm
 from sqlalchemy import select, delete
 from repositories.auth import UserRepository
+from passlib.context import CryptContext
 
 
 
@@ -60,3 +61,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserOrm:
         raise credentials_exception
     
     return user
+
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)

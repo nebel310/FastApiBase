@@ -6,6 +6,10 @@ from contextlib import asynccontextmanager
 from database import create_tables, delete_tables
 from router.auth import router as auth_router
 
+from fastapi import APIRouter
+from repositories.auth import UserRepository
+from schemas.auth import SUserRegister
+
 
 
 
@@ -62,6 +66,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+init_router = APIRouter()
+
+@init_router.post("/init-test-data")
+async def init_test_data():
+    test_users = [
+        {
+            "username": "string",
+            "email": "user@example.com", 
+            "password": "string",
+            "password_confirm": "string"
+        },
+        {
+            "username": "admin",
+            "email": "admin@admin.com",
+            "password": "admin",
+            "password_confirm": "admin"
+        }
+    ]
+    
+    for user in test_users:
+        # Преобразуем словарь в SUserRegister
+        user_data = SUserRegister(**user)
+        await UserRepository.register_user(user_data)
+    
+    return {"message": "Тестовые данные созданы"}
+
+app.include_router(init_router)
 
 
 
