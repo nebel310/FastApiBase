@@ -1,12 +1,21 @@
 import os
+
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+
 from dotenv import load_dotenv
-from database import new_session
-from models.auth import UserOrm, RefreshTokenOrm, BlacklistedTokenOrm
-from schemas.auth import SUserRegister
-from sqlalchemy import select, delete
+from jose import jwt
+from jose import JWTError
 from passlib.context import CryptContext
-from jose import jwt, JWTError
-from datetime import datetime, timezone, timedelta
+from sqlalchemy import delete
+from sqlalchemy import select
+
+from database import new_session
+from models.auth import BlacklistedTokenOrm
+from models.auth import RefreshTokenOrm
+from models.auth import UserOrm
+from schemas.auth import SUserRegister
 
 
 
@@ -19,12 +28,18 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv('REFRESH_TOKEN_EXPIRE_DAYS'))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
+
+
 class UserRepository:
+    """Репозиторий для работы с пользователями."""
     @classmethod
     async def register_user(cls, user_data: SUserRegister) -> int:
+        """Регистрирует нового пользователя."""
         async with new_session() as session:
             query = select(UserOrm).where(UserOrm.email == user_data.email)
             result = await session.execute(query)
+            
             if result.scalars().first():
                 raise ValueError("Пользователь с таким email уже существует")
               
@@ -35,13 +50,17 @@ class UserRepository:
                 email=user_data.email,
                 hashed_password=hashed_password
             )
+            
             session.add(user)
             await session.flush()
             await session.commit()
+            
             return user.id
+    
     
     @classmethod
     async def authenticate_user(cls, email: str, password: str) -> UserOrm | None:
+        """Аутентифицирует пользователя по email и паролю."""
         async with new_session() as session:
             query = select(UserOrm).where(UserOrm.email == email)
             result = await session.execute(query)
@@ -52,22 +71,30 @@ class UserRepository:
             
             return user
     
+    
     @classmethod
     async def get_user_by_email(cls, email: str) -> UserOrm | None:
+        """Получает пользователя по email."""
         async with new_session() as session:
             query = select(UserOrm).where(UserOrm.email == email)
             result = await session.execute(query)
+            
             return result.scalars().first()
+    
     
     @classmethod
     async def get_user_by_id(cls, user_id: int) -> UserOrm | None:
+        """Получает пользователя по ID."""
         async with new_session() as session:
             query = select(UserOrm).where(UserOrm.id == user_id)
             result = await session.execute(query)
+            
             return result.scalars().first()
+    
     
     @classmethod
     async def get_user_by_refresh_token(cls, refresh_token: str) -> UserOrm | None:
+        """Получает пользователя по refresh токену."""
         async with new_session() as session:
             query = select(RefreshTokenOrm).where(RefreshTokenOrm.token == refresh_token)
             result = await session.execute(query)
@@ -78,14 +105,14 @@ class UserRepository:
             
             return await cls.get_user_by_id(refresh_token_orm.user_id)
     
+    
     @classmethod
     async def create_refresh_token(cls, user_id: int) -> str:
+        """Создает новый refresh токен для пользователя."""
         async with new_session() as session:
-            # Удаляем старый refresh токен пользователя, если он существует
             delete_query = delete(RefreshTokenOrm).where(RefreshTokenOrm.user_id == user_id)
             await session.execute(delete_query)
             
-            # Создаем новый refresh токен
             refresh_token = jwt.encode({"sub": str(user_id)}, SECRET_KEY, algorithm=ALGORITHM)
             expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
             
@@ -94,23 +121,30 @@ class UserRepository:
                 token=refresh_token,
                 expires_at=expires_at
             )
+            
             session.add(refresh_token_orm)
             await session.commit()
+            
             return refresh_token
-
+    
+    
     @classmethod
     async def revoke_refresh_token(cls, user_id: int):
+        """Отзывает refresh токен пользователя."""
         async with new_session() as session:
             query = delete(RefreshTokenOrm).where(RefreshTokenOrm.user_id == user_id)
             await session.execute(query)
             await session.commit()
-
+    
+    
     @classmethod
     async def add_to_blacklist(cls, token: str):
+        """Добавляет токен в черный список."""
         async with new_session() as session:
             try:
                 payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                 expires_at = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+                
             except JWTError:
                 return
 
@@ -119,5 +153,6 @@ class UserRepository:
                 expires_at=expires_at,
                 created_at=datetime.now(timezone.utc)
             )
+            
             session.add(blacklisted_token)
             await session.commit()
