@@ -15,7 +15,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web-консоль
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
   backend:
     build: ./backend
     container_name: backend
@@ -27,22 +45,28 @@ services:
       - ALGORITHM=${ALGORITHM}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     volumes:
       - ./backend:/app
-  
+
 # frontend:
 #   build: ./frontend
 #   container_name: frontend
 #   ports:
-#     - "5500:5500"  # !!! ВНИМАНИЕ: Порт может измениться
+#     - "5500:5500"
 #   volumes:
 #     - ./frontend:/app
 #   depends_on:
-#     - backend  # Зависит от сервера (FastAPI)
-
+#     - backend
 
 volumes:
   postgres_data:
+  minio_data:

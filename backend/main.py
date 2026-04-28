@@ -9,6 +9,7 @@ from fastapi.openapi.utils import get_openapi
 from database import create_tables
 from database import delete_tables
 from router.auth import router as auth_router
+from minio.client import s3_client
 
 
 
@@ -21,6 +22,9 @@ async def lifespan(app: FastAPI):
     
     await create_tables()
     print('База готова к работе')
+    
+    await s3_client.ensure_bucket()
+    print(f'Бакет {s3_client.bucket_name} создан')
     
     yield
     
