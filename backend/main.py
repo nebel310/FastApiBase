@@ -9,6 +9,7 @@ from fastapi.openapi.utils import get_openapi
 from database import create_tables
 from database import delete_tables
 from router.auth import router as auth_router
+from router.files import router as file_router
 from minio.client import s3_client
 
 
@@ -17,8 +18,8 @@ from minio.client import s3_client
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения."""
-    await delete_tables()
-    print('База очищена')
+    # await delete_tables()
+    # print('База очищена')
     
     await create_tables()
     print('База готова к работе')
@@ -65,6 +66,7 @@ def custom_openapi():
     secured_paths = {
         ("/auth/me", "get"): [{"Bearer": []}],
         ("/auth/logout", "post"): [{"Bearer": []}],
+        ("/files/", "post"): [{"Bearer": []}],
     }
     
     for (path, method), security in secured_paths.items():
@@ -96,7 +98,7 @@ app.add_middleware(
 
 
 app.include_router(auth_router)
-
+app.include_router(file_router)
 
 
 

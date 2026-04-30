@@ -46,15 +46,15 @@ class FileRepository:
     
     
     @classmethod
-    async def save_file(
+    async def upload_file(
         cls,
         file_bytes: bytes, original_name: str,
-        uploaded_by: int | None=None
+        uploaded_by: int
     )-> FileOrm:
         """Метод который сохраняет файл и возвращает объект FileOrm"""
         
-        content_type = await asyncio.to_thread(cls._get_content_type(file_bytes))
-        extension = await asyncio.to_thread(cls._get_extension(file_bytes))
+        content_type = await asyncio.to_thread(cls._get_content_type, file_bytes)
+        extension = await asyncio.to_thread(cls._get_extension, file_bytes)
         
         object_key = await s3_client.upload(file_bytes, extension)
         
@@ -72,7 +72,7 @@ class FileRepository:
             try:
                 await session.commit()
                 await session.refresh(file_to_insert)
-            except Exception as e:
+            except Exception:
                 await session.rollback()
                 try:
                     await s3_client.delete(object_key)
