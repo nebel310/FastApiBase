@@ -2,7 +2,7 @@ import asyncio
 import magic
 import mimetypes
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from database import new_session
 from models.files import FileOrm
@@ -115,3 +115,29 @@ class FileRepository:
             raise StorageError(f"Ошибка при скачивании файла: {e}") from e
 
         return file_bytes, file_data
+    
+    
+    @classmethod
+    async def delete_file_by_id(
+        cls,
+        file_id: int
+    ) -> None:
+        """Удаляет файл по его id"""
+        
+        async with new_session() as session:
+            query = select(FileOrm).where(FileOrm.id == file_id)
+            result = await session.execute(query)
+            file_data = result.scalars().first()
+            if not file_data:
+                raise ObjectNotFoundError(f"Файл с id={file_id} не найден")
+            object_key = file_data.object_key
+
+            try:
+                await s3_client.delete(object_key)
+            except ObjectNotFoundError:
+                pass
+            except Exception as e:
+                raise StorageError(f"Не удалось удалить объект MinIO: {e}") from e
+
+            await session.delete(file_data)
+            await session.commit()
