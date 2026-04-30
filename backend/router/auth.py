@@ -1,21 +1,14 @@
-from fastapi import APIRouter
-from fastapi import Depends
-from fastapi import HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from models.auth import UserOrm
 from repositories.auth import UserRepository
-from schemas.auth import ErrorResponse
-from schemas.auth import LoginResponse
-from schemas.auth import LogoutResponse
-from schemas.auth import RefreshResponse
-from schemas.auth import RegisterResponse
-from schemas.auth import SUser
-from schemas.auth import SUserLogin
-from schemas.auth import SUserRegister
-from schemas.auth import ValidationErrorResponse
-from utils.security import create_access_token
-from utils.security import get_current_user
-from utils.security import oauth2_scheme
+from schemas.base import ValidationErrorResponse, ErrorResponse
+from schemas.auth import (
+    LoginResponse, LogoutResponse, SUserRegister,
+    RefreshResponse, RegisterResponse, SUser,
+    SUserLogin
+)
+from utils.security import create_access_token, get_current_user, oauth2_scheme
 
 
 
@@ -24,7 +17,6 @@ router = APIRouter(
     prefix="/auth",
     tags=['Пользователи']
 )
-
 
 
 
@@ -61,8 +53,6 @@ async def register_user(user_data: SUserRegister):
             status_code=500,
             detail="Внутренняя ошибка сервера"
         )
-
-
 
 
 @router.post(
@@ -108,8 +98,6 @@ async def login_user(login_data: SUserLogin):
         )
 
 
-
-
 @router.post(
     "/refresh",
     response_model=RefreshResponse,
@@ -148,8 +136,6 @@ async def refresh_token(refresh_token: str):
         )
 
 
-
-
 @router.post(
     "/logout",
     response_model=LogoutResponse,
@@ -180,8 +166,6 @@ async def logout(
             status_code=500,
             detail="Внутренняя ошибка сервера"
         )
-
-
 
 
 @router.get(

@@ -1,9 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-from pydantic import ConfigDict
-from pydantic import EmailStr
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 
@@ -105,17 +102,3 @@ class RefreshResponse(BaseModel):
 class LogoutResponse(BaseModel):
     """Схема ответа для выхода из системы."""
     success: bool = Field(..., example=True)
-
-
-
-
-class ErrorResponse(BaseModel):
-    """Схема ответа для ошибок."""
-    detail: str = Field(..., example="Сообщение об ошибке")
-
-
-
-
-class ValidationErrorResponse(BaseModel):
-    """Схема ответа для ошибок валидации."""
-    detail: str = Field(..., example="Пользователь с таким email уже существует")
