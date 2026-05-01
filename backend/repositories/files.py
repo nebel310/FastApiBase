@@ -98,7 +98,7 @@ class FileRepository:
             file_data = result.scalars().first()
 
             if not file_data:
-                raise ObjectNotFoundError(f"Файл с id={file_id} не найден")
+                raise ObjectNotFoundError(f"Файл с id={file_id} не найден в БД")
 
             object_key = file_data.object_key
 
@@ -115,6 +115,24 @@ class FileRepository:
             raise StorageError(f"Ошибка при скачивании файла: {e}") from e
 
         return file_bytes, file_data
+    
+    
+    @classmethod
+    async def get_file_info_by_id(
+        cls,
+        file_id: int
+    ) -> FileOrm:
+        """Метод который возвращает чисто метаданные файла по его id"""
+        
+        async with new_session() as session:
+            query = select(FileOrm).where(FileOrm.id == file_id)
+            result = await session.execute(query)
+            file_data = result.scalars().first()
+            
+            if not file_data:
+                raise ObjectNotFoundError(f"Файл с id = {file_id} не найден в БД")
+            
+            return file_data
     
     
     @classmethod

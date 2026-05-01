@@ -67,6 +67,8 @@ def custom_openapi():
         ("/auth/me", "get"): [{"Bearer": []}],
         ("/auth/logout", "post"): [{"Bearer": []}],
         ("/files/", "post"): [{"Bearer": []}],
+        ("/files/{file_id}", "get"): [{"Bearer": []}],
+        ("/files/{file_id}/info", "get"): [{"Bearer": []}],
     }
     
     for (path, method), security in secured_paths.items():

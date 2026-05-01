@@ -1,7 +1,7 @@
 from fastapi import(
     APIRouter, Depends, HTTPException,
     UploadFile, status, File,
-    Form
+    Form, Response
 )
 
 from minio.exceptions import StorageError, ObjectNotFoundError
@@ -57,7 +57,67 @@ async def upload_file(
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+
+@router.get(
+    "/{file_id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        500: {"model": ValidationErrorResponse, "description": "Внутренняя ошибка сервера"},
+        404: {"model": ErrorResponse, "description": "Файл не найден"},
+        502: {"model": ErrorResponse, "description": "Ошибка хранилища"},
+    }
+)
+async def dowload_file(
+    file_id: int,
+    current_user: UserOrm = Depends(get_current_user)
+):
+    """Эндпоинт для скачивания файла по его file_id"""
+    try:
+        file_bytes, file_data = await FileRepository.download_file_by_id(file_id)
+        
+        safe_filename = file_data.original_name.replace('"', '')
+        
+        headers = {
+            "Content-Disposition": f'attachment; filename="{safe_filename}"'
+        }
+        return Response(
+            content=file_bytes,
+            media_type=file_data.content_type or "application/octet-stream",
+            headers=headers,
+        )
+    except ObjectNotFoundError:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+    except StorageError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+
+@router.get(
+    "/{file_id}/info",
+    response_model=SFileResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"model": ValidationErrorResponse, "description": "Ошибка валидации"},
+    }
+)
+async def get_file_info(
+    file_id: int,
+    current_user: UserOrm = Depends(get_current_user)
+):
+    """Эндпоинт возвращает метаданные файла по его id"""
     
+    try:
+        file_data = await FileRepository.get_file_info_by_id(file_id)
+        
+        return file_data
+    except ObjectNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
 
 """ 
 TODO:
