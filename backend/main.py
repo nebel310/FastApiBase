@@ -69,6 +69,7 @@ def custom_openapi():
         ("/files/", "post"): [{"Bearer": []}],
         ("/files/{file_id}", "get"): [{"Bearer": []}],
         ("/files/{file_id}/info", "get"): [{"Bearer": []}],
+        ("/files/{file_id}", "delete"): [{"Bearer": []}],
     }
     
     for (path, method), security in secured_paths.items():

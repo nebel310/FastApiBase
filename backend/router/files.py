@@ -5,7 +5,7 @@ from fastapi import(
 )
 
 from minio.exceptions import StorageError, ObjectNotFoundError
-from schemas.base import ErrorResponse, ValidationErrorResponse
+from schemas.base import ErrorResponse, ValidationErrorResponse, SuccessResponse
 from schemas.files import SFileResponse
 from models.auth import UserOrm
 from repositories.files import FileRepository
@@ -99,6 +99,8 @@ async def dowload_file(
     response_model=SFileResponse,
     status_code=status.HTTP_200_OK,
     responses={
+        500: {"model": ErrorResponse, "description": "Внутренняя ошибка сервера"},
+        404: {"model": ErrorResponse, "description": "Файл не найден"},
         400: {"model": ValidationErrorResponse, "description": "Ошибка валидации"},
     }
 )
@@ -118,6 +120,35 @@ async def get_file_info(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
+
+@router.delete(
+    "/{file_id}",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"model": ErrorResponse, "description": "Файл не найден"},
+        502: {"model": ErrorResponse, "description": "Ошибка хранилища"},
+        500: {"model": ErrorResponse, "description": "Внутренняя ошибка сервера"}
+    }
+)
+async def delete_file(
+    file_id: int,
+    current_user: UserOrm = Depends(get_current_user)
+):
+    """Эндпоинт для удаления файла"""
+    
+    try:
+        await FileRepository.delete_file_by_id(file_id)
+        
+        return SuccessResponse(detail="Файл успешно удалён")
+    except ObjectNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except StorageError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
+
 
 """ 
 TODO:
