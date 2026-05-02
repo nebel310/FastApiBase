@@ -19,6 +19,7 @@ class UserOrm(Model):
     username: Mapped[str]
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     hashed_password: Mapped[str]
+    avatar_id: Mapped[int | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), 
         default=lambda: datetime.now(timezone.utc)

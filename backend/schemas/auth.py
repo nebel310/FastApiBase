@@ -52,6 +52,7 @@ class SUser(BaseModel):
     id: int
     username: str
     email: EmailStr
+    avatar_id: int | None=None
     created_at: datetime
 
     model_config = ConfigDict(
@@ -62,6 +63,7 @@ class SUser(BaseModel):
                     "id": 1,
                     "username": "john_doe",
                     "email": "john@example.com",
+                    "avatar_id": None,
                     "created_at": "2024-01-01T12:00:00Z"
                 }
             ]
