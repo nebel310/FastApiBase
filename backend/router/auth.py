@@ -6,9 +6,10 @@ from schemas.base import ValidationErrorResponse, ErrorResponse
 from schemas.auth import (
     LoginResponse, LogoutResponse, SUserRegister,
     RefreshResponse, RegisterResponse, SUser,
-    SUserLogin
+    SUserLogin, SUserUpdate
 )
 from utils.security import create_access_token, get_current_user, oauth2_scheme
+from minio.exceptions import StorageError, ObjectNotFoundError
 
 
 
@@ -191,3 +192,40 @@ async def get_current_user_info(current_user: UserOrm = Depends(get_current_user
             status_code=500,
             detail="Внутренняя ошибка сервера"
         )
+
+
+@router.patch(
+    "/me",
+    response_model=SUser,
+    responses={
+        400: {"model": ValidationErrorResponse},
+        401: {"model": ErrorResponse, "description": "Не авторизован"},
+        404: {"model": ErrorResponse, "description": "Файл не найден"},
+        500: {"model": ErrorResponse}
+    }
+)
+async def update_current_user(
+    update_data: SUserUpdate,
+    current_user: UserOrm = Depends(get_current_user)
+):
+    """
+    Обновление данных текущего пользователя.
+    Можно передать только те поля, которые требуется изменить.
+    """
+    # Передаём только те поля, которые не None
+    cleaned_data = update_data.model_dump(exclude_none=True)
+
+    try:
+        updated_user = await UserRepository.update_user(
+            user_id=current_user.id,
+            update_data=cleaned_data
+        )
+        return updated_user
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ObjectNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except StorageError as e:
+        raise HTTPException(status_code=502, detail=f"Ошибка хранилища: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Внутренняя ошибка сервера: {str(e)}")
