@@ -209,3 +209,47 @@ class UserRepository:
             await session.commit()
             await session.refresh(user)
             return user
+
+
+    @classmethod
+    async def get_users_paginated(
+        cls,
+        cursor_id: int | None,
+        direction: str,
+        limit: int
+    ) -> tuple[list[UserOrm], int | None, int | None]:
+        """
+        Возвращает список пользователей и ID для курсоров next/previous.
+        direction: 'forward' (id > cursor) или 'backward' (id < cursor).
+        """
+        async with new_session() as session:
+            if direction == "forward":
+                if cursor_id is not None:
+                    query = select(UserOrm).where(
+                        UserOrm.id > cursor_id
+                    ).order_by(UserOrm.id.asc()).limit(limit + 1)
+                else:
+                    query = select(UserOrm).order_by(UserOrm.id.asc()).limit(limit + 1)
+                result = await session.execute(query)
+                items = result.scalars().all()
+                users = items[:limit]
+                next_id = users[-1].id if len(items) > limit else None
+                prev_id = users[0].id if cursor_id is not None else None
+
+            elif direction == "backward":
+                if cursor_id is not None:
+                    query = select(UserOrm).where(
+                        UserOrm.id < cursor_id
+                    ).order_by(UserOrm.id.desc()).limit(limit + 1)
+                else:
+                    query = select(UserOrm).order_by(UserOrm.id.desc()).limit(limit + 1)
+                result = await session.execute(query)
+                items = result.scalars().all()
+                items.reverse()
+                users = items[:limit]
+                next_id = users[-1].id if cursor_id is not None and len(items) > limit else None
+                prev_id = users[0].id if len(items) > limit else None
+            else:
+                raise ValueError("Invalid direction")
+
+            return users, next_id, prev_id

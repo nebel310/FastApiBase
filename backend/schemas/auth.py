@@ -98,6 +98,12 @@ class SUser(BaseModel):
             ]
         }
     )
+    
+
+class SUserListResponse(BaseModel):
+    users: list[SUser]
+    next_cursor: str | None = None
+    previous_cursor: str | None = None
 
 
 
