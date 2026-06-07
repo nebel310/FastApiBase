@@ -1,6 +1,7 @@
 import asyncio
 import magic
 import mimetypes
+from typing import AsyncGenerator
 
 from sqlalchemy import select, delete
 
@@ -115,6 +116,26 @@ class FileRepository:
             raise StorageError(f"Ошибка при скачивании файла: {e}") from e
 
         return file_bytes, file_data
+
+
+    @classmethod
+    async def stream_file_range(
+        cls,
+        file_id: int,
+        start: int | None = None,
+        end: int | None = None
+    ) -> AsyncGenerator[bytes, None]:
+        """Возвращает async-генератор чанков файла (весь файл или диапазон)"""
+        async with new_session() as session:
+            query = select(FileOrm.object_key).where(FileOrm.id == file_id)
+            result = await session.execute(query)
+            object_key = result.scalar_one_or_none()
+
+        if not object_key:
+            raise ObjectNotFoundError(f"Файл с id={file_id} не найден в БД")
+
+        async for chunk in s3_client.download_range_stream(object_key, start, end):
+            yield chunk
     
     
     @classmethod

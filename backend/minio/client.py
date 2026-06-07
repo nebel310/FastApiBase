@@ -1,6 +1,7 @@
 import os
 import uuid
 from dotenv import load_dotenv
+from typing import AsyncGenerator
 
 from aiobotocore.session import AioSession
 from aiobotocore.client import AioBaseClient
@@ -111,6 +112,45 @@ class S3Client:
             raise StorageError(
                 f"Ошибка при скачивании файла {str(e)}"
             ) from e
+    
+    
+    async def download_range_stream(
+        self,
+        object_key: str,
+        start: int | None = None,
+        end: int | None = None
+    ) -> AsyncGenerator[bytes, None]:
+        """Асинхронный генератор чанков файла (весь файл или указанный диапазон)"""
+        
+        chunk_size = 64 * 1024
+
+        range_header = None
+        if start is not None:
+            if end is not None:
+                range_header = f'bytes={start}-{end}'
+            else:
+                range_header = f'bytes={start}-'
+
+        try:
+            async with self.get_client() as client:
+                resp = await client.get_object(
+                    Bucket=self.bucket_name,
+                    Key=object_key,
+                    Range=range_header
+                )
+                body = resp['Body']
+                while True:
+                    chunk = await body.read(chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code')
+            if error_code == 'NoSuchKey':
+                raise ObjectNotFoundError(f"Файл {object_key} не найден") from e
+            if error_code == 'InvalidRange':
+                raise StorageError(f"Некорректный диапазон для {object_key}") from e
+            raise StorageError(f"Ошибка при скачивании файла: {e}") from e
     
     
     async def delete(self, object_key: str) -> None:
