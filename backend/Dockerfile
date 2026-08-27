@@ -1,12 +1,14 @@
-FROM python:3.13
+# Используем официальный образ с предустановленным uv и Python 3.13
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends libmagic1 && rm -rf /var/lib/apt/lists/*
+# Копируем только файлы зависимостей
+COPY pyproject.toml uv.lock ./
 
-COPY requirements.txt .
-
-RUN pip install --no-cache-dir -r requirements.txt
+ENV UV_SYSTEM_PYTHON=1
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 COPY . .
 

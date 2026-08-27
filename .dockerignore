@@ -1,0 +1,53 @@
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Логи и временные файлы
+*.log
+*.tmp
+*.temp
+
+# Секреты
+.env
+.env.local
+*.env
+secrets.yml
+*.pem
+*.key
+
+# Документация и прочее
+README.md
+TODO.txt
+assets/
+test.py
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Docker-специфичное
+docker-compose.yml
+Dockerfile*
+.dockerignore

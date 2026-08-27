@@ -1,29 +1,43 @@
+# Virtual environments
 venv/
 .env/
 .envrc/
 env/
 .venv/
 
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+*.egg-info/
+dist/
+build/
 
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-*
 
+# Logs & temps
 *.log
 *.tmp
 *.temp
+*.cache
 
+# Environment secrets
 *.env
 *.env.local
 secrets.yml
+*.pem
+*.key
 
+# OS junk
 .DS_Store
 Thumbs.db
 
+# Project-specific
 assets
-
 test.py
